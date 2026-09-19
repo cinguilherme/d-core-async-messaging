@@ -1,5 +1,5 @@
-{:deps {;; d-core provides shared facilities: tracing, schema, storage.protocol, codecs.protocol
-        org.clojars.cinguilherme/d-core {:local/root "../d-core"}
+{:deps {;; d-core-std provides shared facilities: tracing, schema, storage.protocol, codecs, redis/valkey clients, workers
+        org.clojars.cinguilherme/d-core-std {:local/root "../d-core-std"}
 
         ;; Clojure Core dependencies
         org.clojure/clojure {:mvn/version "1.12.3"}
