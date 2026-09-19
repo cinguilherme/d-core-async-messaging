@@ -1,0 +1,52 @@
+{:deps {;; d-core provides shared facilities: tracing, schema, storage.protocol, codecs.protocol
+        org.clojars.cinguilherme/d-core {:local/root "../d-core"}
+
+        ;; Clojure Core dependencies
+        org.clojure/clojure {:mvn/version "1.12.3"}
+        org.clojure/core.async {:mvn/version "1.8.741"}
+
+        ;; Schema validation / generation
+        metosin/malli {:mvn/version "0.20.0"}
+
+        ;; Duct dependencies (Integrant lifecycle)
+        org.duct-framework/main {:mvn/version "0.4.4"}
+
+        ;; Redis dependencies (Redis Streams)
+        com.taoensso/carmine {:mvn/version "3.4.1"}
+
+        ;; AWS SQS
+        amazonica/amazonica {:mvn/version "0.3.165"}
+
+        ;; JSON dependencies
+        cheshire/cheshire {:mvn/version "5.13.0"}
+
+        ;; Scheduling / Quartz (deferred delivery)
+        org.quartz-scheduler/quartz {:mvn/version "2.3.2"}
+
+        ;; JetStream / NATS dependencies
+        io.nats/jnats {:mvn/version "2.20.5"}
+
+        ;; Kafka dependencies
+        org.apache.kafka/kafka-clients {:mvn/version "3.6.1"}
+
+        ;; RabbitMQ dependencies
+        com.rabbitmq/amqp-client {:mvn/version "5.20.0"}
+
+        ;; Metrics / Prometheus (stream instrumentation)
+        io.prometheus/simpleclient {:mvn/version "0.16.0"}
+        io.prometheus/simpleclient_common {:mvn/version "0.16.0"}
+}
+
+ :aliases
+ {:test
+  {:extra-paths ["test"]
+   :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                      :git/sha "dfb30dd"}}
+   :main-opts ["-m" "cognitect.test-runner"]}
+  :lint
+  {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2024.03.13"}}
+   :main-opts ["-m" "clj-kondo.main"]}
+  :build
+  {:deps {io.github.clojure/tools.build {:mvn/version "0.10.6"}
+          slipset/deps-deploy {:mvn/version "0.2.2"}}
+   :ns-default build}}}
