@@ -12,37 +12,42 @@
   (future
     (logger/log logger :report ::subscription-started {:id subscription-id})
     (while (not @stop?)
-      (if-let [item (q/dequeue! queue)]
-        (try
-          ;; In-memory queue already contains decoded envelopes; apply subscription view validation.
-          (let [scfg (or subscription-schema {})
-                view (:schema scfg)
-                strictness (:strictness scfg)]
-            (when view
-              (schema/validate! view
-                                (or (:msg item) item)
-                                {:schema-id subscription-id
-                                 :strictness strictness})))
-          (handler item)
-          (catch Exception e
-            (logger/log logger :error ::handler-failed {:id subscription-id :error (.getMessage e)})
-            (when dead-letter
-              (let [dl-cfg (when routing (routing/deadletter-config routing topic subscription-id))
-                    envelope (dlmeta/enrich-for-deadletter
-                              item
-                              {:topic topic
-                               :subscription-id subscription-id
-                               :runtime :in-memory
-                               :source {:topic topic
-                                        :subscription-id subscription-id}
-                               :producer producer-key
-                               :deadletter dl-cfg
-                               :status (when (= :schema-invalid (:failure/type (ex-data e))) :poison)})]
-                (dl/send-dead-letter! dead-letter envelope
-                                      {:error e
-                                       :stacktrace (with-out-str (.printStackTrace e))}
-                                      {})))))
-        (Thread/sleep poll-ms)))
+      (try
+        (if-let [item (q/poll! queue (long poll-ms))]
+          (try
+            ;; In-memory queue already contains decoded envelopes; apply subscription view validation.
+            (let [scfg (or subscription-schema {})
+                  view (:schema scfg)
+                  strictness (:strictness scfg)]
+              (when view
+                (schema/validate! view
+                                  (or (:msg item) item)
+                                  {:schema-id subscription-id
+                                   :strictness strictness})))
+            (handler item)
+            (catch Exception e
+              (logger/log logger :error ::handler-failed {:id subscription-id :error (.getMessage e)})
+              (when dead-letter
+                (let [dl-cfg (when routing (routing/deadletter-config routing topic subscription-id))
+                      envelope (dlmeta/enrich-for-deadletter
+                                item
+                                {:topic topic
+                                 :subscription-id subscription-id
+                                 :runtime :in-memory
+                                 :source {:topic topic
+                                          :subscription-id subscription-id}
+                                 :producer producer-key
+                                 :deadletter dl-cfg
+                                 :status (when (= :schema-invalid (:failure/type (ex-data e))) :poison)})]
+                  (dl/send-dead-letter! dead-letter envelope
+                                        {:error e
+                                         :stacktrace (with-out-str (.printStackTrace e))}
+                                        {}))))))
+        (catch InterruptedException _
+          nil)
+        (catch Exception e
+          (logger/log logger :error ::consumer-loop-error {:id subscription-id :error (.getMessage e)})
+          (Thread/sleep (long poll-ms)))))
     (logger/log logger :report ::subscription-stopped {:id subscription-id})))
 
 (defmethod ig/init-key :d-core.core.consumers.consumer/consumer
